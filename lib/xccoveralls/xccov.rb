@@ -26,9 +26,21 @@ module Xccoveralls
     def archive_path
       return @archive_path if @archive_path
       ext = '.xccovarchive'
-      files = Dir[File.join(test_logs_path, "*#{ext}")]
+      xcode_10_path_ext = '.xcresult'
+
+      search_directory = test_logs_path
+
+      # Xcode >= 10
+      result_folders = Dir[File.join(test_logs_path, "*#{xcode_10_path_ext}")]
+      if result_folders.length
+        search_directory = Dir[File.join(result_folders.sort_by { |filename| File.mtime(filename) }
+                                                       .reverse.first, "*")].first
+      end
+
+      files = Dir[File.join(search_directory, "*#{ext}")]
       @archive_path = files.sort_by { |filename| File.mtime(filename) }
                            .reverse.first
+
       @archive_path ||
         user_error!("Could not find any #{ext} in #{derived_data_path}")
       @archive_path
